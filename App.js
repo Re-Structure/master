@@ -8,12 +8,12 @@ import {
   ImageBackground,
   Dimensions,
   Alert,
+  Image
 } from "react-native";
 import MapView, { Marker, Polyline } from "react-native-maps";
 import { Entypo, MaterialIcons, AntDesign } from '@expo/vector-icons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { NavigationContainer } from "@react-navigation/native";
-import MosqueMarquer from "./MosqueMarker";
 
 
 
@@ -74,9 +74,9 @@ function MapScreen() {
      <View style={styles.container}>
         <MapView
           style={styles.map}
-          mapType="standard"
+          mapType="hybrid"
           showsUserLocation
-          followsUserLocation={followUserLocationBoolean}
+          //followsUserLocation={followUserLocationBoolean}
           showsPointsOfInterest
           showsCompass
           onRegionChange={(region) => changeMapView(region)}
@@ -88,40 +88,13 @@ function MapScreen() {
             longitudeDelta: initialLonDelta,
           }}
         >
-          <View style={{position: 'absolute'}}>
-            {data.map((item) => (
-              <Marker
-                onPress={() => handleMarkerPress(item)}
-                coordinate={{
-                  latitude: item.latitude,
-                  longitude: item.longitude,
-                }}
-                image={require('./Images/OkIPullUp.jpeg')}
-                pinColor={item.id === visibleItemId ? 'red' : 'blue'}
-                key={item.id}>
-                <MosqueMarquer
-                  mosqueImage={item.images}
-                  itemId={item.id}
-                  visibleItemId={visibleItemId}
-                  distance={item.distance_result}
-                />
-              </Marker>
-            ))}
-            {isUserGeoLoc ? (
-              <Marker
-                coordinate={{
-                  latitude: userLocation.latitude,
-                  longitude: userLocation.longitude,
-                }}
-                description={'Your are here'}>
-                <Image
-                  resizeMode="contain"
-                  source={require('Resources/user_location.png')}
-                  style={{tintColor: '#4280ee', height: 25}}
-                />
-              </Marker>
-            ) : null}
-          </View>
+          <Marker coordinate={{latitude: 40.72886598967254, longitude: -73.99054946724266}}>
+            <View 
+              style={{height: 50, width: 50, backgroundColor: 'black', alignSelf: 'center', justifyContent: 'center', alignItems: 'center'}}
+            >
+              <Image source={require("./Images/OkIPullUp.jpeg")} style={{height: 45, width: 45, alignSelf: 'center', justifyContent: 'center', alignItems: 'center'}}/>
+            </View>
+          </Marker>
         </MapView>
       </View>
   )
