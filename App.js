@@ -90,9 +90,13 @@ function MapScreen() {
         >
           <Marker coordinate={{latitude: 40.72886598967254, longitude: -73.99054946724266}}>
             <View 
-              style={{height: 50, width: 50, backgroundColor: 'black', alignSelf: 'center', justifyContent: 'center', alignItems: 'center'}}
+              style={{height: 65, width: 65, backgroundColor: 'black', alignSelf: 'center', justifyContent: 'center', alignItems: 'center'}}
             >
-              <Image source={require("./Images/OkIPullUp.jpeg")} style={{height: 45, width: 45, alignSelf: 'center', justifyContent: 'center', alignItems: 'center'}}/>
+              <TouchableOpacity 
+                style={{flex: 1}}
+              >
+                <Image source={require("./Images/OkIPullUp.jpeg")} style={{height: 60, width: 60, alignSelf: 'center', justifyContent: 'center', alignItems: 'center'}}/>
+              </TouchableOpacity>
             </View>
           </Marker>
         </MapView>
