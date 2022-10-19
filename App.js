@@ -14,6 +14,7 @@ import MapView, { Marker, Polyline } from "react-native-maps";
 import { Entypo, MaterialIcons, AntDesign } from '@expo/vector-icons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { NavigationContainer } from "@react-navigation/native";
+import {Camera} from "react-native-vision-camera"
 
 
 
@@ -43,6 +44,8 @@ function MapScreen() {
     temp.id = imageKeys;
     setImageKeys(imageKeys + 1);
     setData(temp);
+    //const cameraPermission = await Camera.getCameraPermissionStatus()
+    //const microphonePermission = await Camera.getMicrophonePermissionStatus()
   }, [])
 
   function setLocation(e) {
@@ -107,7 +110,11 @@ function MapScreen() {
 function ReportScreen() {
   return(
     <View style={styles.container}>
-      <Text>Test2</Text>
+      <Camera
+        style={StyleSheet.absoluteFill}
+        device={device}
+        isActive={true}
+      />
     </View>
   )
 }
