@@ -1,5 +1,5 @@
 import { StatusBar } from "expo-status-bar";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   StyleSheet,
   Text,
@@ -8,15 +8,26 @@ import {
   ImageBackground,
   Dimensions,
   Alert,
-  Image
+  Image,
+  Button,
+  SafeAreaView
 } from "react-native";
 import MapView, { Marker, Polyline } from "react-native-maps";
 import { Entypo, MaterialIcons, AntDesign } from '@expo/vector-icons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { NavigationContainer } from "@react-navigation/native";
-import {Camera} from "react-native-vision-camera"
+import { Camera } from 'expo-camera';
+import { shareAsync } from 'expo-sharing';
+import * as MediaLibrary from 'expo-media-library';
 
-
+/*
+<SafeAreaView style={styles.container}>
+        <Image style={styles.preview} source={{ uri: "data:image/jpg;base64," + photo.base64 }} />
+        <Button title="Share" onPress={sharePic} />
+        {hasMediaLibraryPermission ? <Button title="Save" onPress={savePhoto} /> : undefined}
+        <Button title="Discard" onPress={() => setPhoto(undefined)} />
+      </SafeAreaView>
+*/
 
 
 
@@ -44,8 +55,6 @@ function MapScreen() {
     temp.id = imageKeys;
     setImageKeys(imageKeys + 1);
     setData(temp);
-    //const cameraPermission = await Camera.getCameraPermissionStatus()
-    //const microphonePermission = await Camera.getMicrophonePermissionStatus()
   }, [])
 
   function setLocation(e) {
@@ -108,15 +117,99 @@ function MapScreen() {
 }
 
 function ReportScreen() {
-  return(
-    <View style={styles.container}>
-      <Camera
-        style={StyleSheet.absoluteFill}
-        device={device}
-        isActive={true}
-      />
-    </View>
-  )
+  let cameraRef = useRef();
+  const [hasCameraPermission, setHasCameraPermission] = useState();
+  const [hasMediaLibraryPermission, setHasMediaLibraryPermission] = useState();
+  const [photo, setPhoto] = useState();
+
+  useEffect(() => {
+    (async () => {
+      const cameraPermission = await Camera.requestCameraPermissionsAsync();
+      const mediaLibraryPermission = await MediaLibrary.requestPermissionsAsync();
+      setHasCameraPermission(cameraPermission.status === "granted");
+      setHasMediaLibraryPermission(mediaLibraryPermission.status === "granted");
+    })();
+  }, []);
+
+  if (hasCameraPermission === undefined) {
+    return <Text style={{top: 300, left: 10}}>Requesting permissions...</Text>
+  } else if (!hasCameraPermission) {
+    return <Text style={{top: 300, left: 10}}>Permission for camera not granted. Please change this in settings.</Text>
+  }
+
+  let takePic = async () => {
+    let options = {
+      quality: 1,
+      base64: true,
+      exif: false
+    };
+
+    let newPhoto = await cameraRef.current.takePictureAsync(options);
+    setPhoto(newPhoto);
+  };
+
+  if (photo) {
+    console.log(photo)
+    let sharePic = () => {
+      shareAsync(photo.uri).then(() => {
+        setPhoto(undefined);
+      });
+    };
+
+    let savePhoto = () => {
+      MediaLibrary.saveToLibraryAsync(photo.uri).then(() => {
+        setPhoto(undefined);
+      });
+    };
+
+    return (
+      <View style={{flex: 1}}>
+        <View style={{flex: 1}}>
+          <TouchableOpacity
+          onPress={() => setPhoto(undefined)}
+          >
+            
+          </TouchableOpacity>
+        </View>
+        <View style={{flex: 3}}>
+
+        </View>
+        <View style={{flex: 1}}>
+
+        </View>
+        <View style={{flex: 2}}>
+
+        </View>
+        <View style={{flex: 1}}>
+          <TouchableOpacity
+          onPress={() => addPhoto(photo)}
+          >
+
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
+  return (
+    <Camera style={styles.container} ref={cameraRef}>
+      <View style={{ flex: 1 }}>
+        <TouchableOpacity
+          style={{ alignSelf: 'center', justifyContent:'center', top: '86.69420%', backgroundColor: 'white', height: 80, width: 80, borderRadius: 160 }}
+        >
+          <View
+          style={{ alignSelf: 'center', justifyContent:'center', backgroundColor: 'black', height: 75, width: 75, borderRadius: 150 }}
+          >
+            <TouchableOpacity
+            style={{ alignSelf: 'center', justifyContent:'center', backgroundColor: 'white', height: 70, width: 70, borderRadius: 140 }}
+            onPress={takePic}
+            />
+          </View>
+        </TouchableOpacity>
+      </View>
+      <StatusBar style="auto" />
+    </Camera>
+  );
 }
 
 function HistoryScreen() {
