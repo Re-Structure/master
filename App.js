@@ -17,10 +17,18 @@ import {
   TouchableHighlight,
 } from "react-native";
 import MapView, { Marker, Polyline } from "react-native-maps";
-import { Entypo, MaterialIcons, AntDesign } from '@expo/vector-icons';
+import { Entypo, MaterialIcons, AntDesign, FontAwesome5 } from '@expo/vector-icons';
 import { Camera } from 'expo-camera';
 import { shareAsync } from 'expo-sharing';
 import * as MediaLibrary from 'expo-media-library';
+import moment from 'moment';
+
+//colors:
+//#0b5688 blue
+// #ffffff white
+//#f8d062 yellow
+//#f3944e orange
+//#6ac6a5 green
 
 /*
 <SafeAreaView style={styles.container}>
@@ -33,33 +41,6 @@ import * as MediaLibrary from 'expo-media-library';
 
 
 
-
-// function MyTabs() {
-//   return (
-//     <Tab.Navigator>
-//       <Tab.Screen name="Map" options={{ 
-//           headerShown: false,
-//           tabBarLabel: "Map",
-//           tabBarIcon: ({ color, size }) => (
-//             <Entypo name="map" size={size} color={color} />
-//           ),
-//         }} component={MapScreen} />
-//       <Tab.Screen name="report" options={{ 
-//         headerShown: false,
-//         tabBarLabel: "Report",
-//           tabBarIcon: ({ color, size }) => (
-//             <MaterialIcons name="report" size={size} color={color} />
-//           ),
-//          }} component={ReportScreen} />
-//       <Tab.Screen name="history" options={{ 
-//         headerShown: false,
-//         tabBarLabel: "History",
-//           tabBarIcon: ({ color, size }) => (
-//             <AntDesign name="calendar" size={size} color={color} />
-//           ), }} component={HistoryScreen} />
-//     </Tab.Navigator>
-//   );
-// }
 
 export default function App() {
   const windowWidth = Dimensions.get('window').width;
@@ -81,11 +62,46 @@ export default function App() {
   const [longitude, setLongitude] = useState();
   const [latitude, setLatitude] = useState();
   const [itemId, setItemId] = useState(1);
-  const [description, setDescription] = useState();
+  const [address, setAddress] = useState();
+  const [mount, setMount] = useState(false);
+  const [description, setDescription] = useState("None");
   const [storedImages, setStoredImages] = useState([])
+  
   const [data, setData] = useState([
     
   ])
+  
+  var GEOURL1 = 'http://api.positionstack.com/v1/reverse?access_key=21972469fdbb5865baba1ff58cce69d5&query=';
+
+  useEffect(() => {
+    if (mount && latitude != null && longitude != null){
+      var GEOURL = GEOURL1 + latitude + "," + longitude;
+      var wrong = false;
+      fetch(GEOURL)
+      .then(response => response.json())
+      .then(dataGeo => {
+        setAddress(dataGeo.data[0].label);
+      })
+      .catch (() => {
+        if (wrong == false){
+          wrong = true;
+          showAlert();
+        }
+      })
+      
+      const showAlert = () => {
+        if(wrong){
+          Alert.alert(
+            "Location Error",
+            "Unable to retrieve data"
+          )
+        }
+      }
+    }
+    else{
+      setMount(true);
+    }
+  }, [photo])
 
   function changeScreens(x){
     if (x == 1){
@@ -123,6 +139,13 @@ export default function App() {
     });
     setCoordinates(temp);
   }
+
+  function changeDescription(x){
+    if (x.length > 100){
+      x = x.substring(0, 175);
+    }
+    setDescription(x);
+  }
   
   function changeMapView(region) {
     setInitialLat(region.latitude);
@@ -136,6 +159,14 @@ export default function App() {
     temp.pop();
     setData(temp);
     setPhoto(undefined);
+    setDescription("None")
+  }
+
+  function deleteReport(x){
+    let temp = data;
+    temp.splice(x , 1);
+    setData(temp);
+    changeScreens(1);
   }
 
   let cameraRef = useRef();
@@ -171,24 +202,35 @@ export default function App() {
       image: newPhoto.uri,
       longitude: longitude,
       latitude: latitude,
-      key: itemId.toString()
+      key: itemId.toString(),
+      address: address,
+      description: "",
+      time: ""
     }
     setItemId(itemId + 1);
     let adding = data;
     adding.push(adjust)
     setData(adding);
-    console.log(adding);
   };
 
   function addPhoto(){
+    var date = moment()
+      .utcOffset('-04:00')
+      .format('YYYY-MM-DD hh:mm a');
+    var temp = data;
+    temp[temp.length - 1].description = description;
+    temp[temp.length - 1].address = address;
+    temp[temp.length - 1].time = date;
+    setData(temp)
     changeScreens(1);
     setPhoto(undefined)
+    setDescription("None")
   }
 
   const NavigatorCode = () => {
     return(
       <View style={{flex: 0.12}}>
-        <View style={{flex: 1, flexDirection: 'row'}}>
+        <View style={{flex: 1, flexDirection: 'row', backgroundColor: 'white'}}>
           <View style={{flex: 1}}>
             <TouchableOpacity
             onPress={() => changeScreens(1)}
@@ -250,17 +292,23 @@ export default function App() {
               longitudeDelta: initialLonDelta,
             }}
           >
-            <Marker coordinate={{ latitude: 40.72886598967254, longitude: -73.99054946724266 }}>
-              <View 
-                style={{height: 100, width: 65, backgroundColor: 'black', alignSelf: 'center', justifyContent: 'center', alignItems: 'center'}}
+            {data.map((marker, index) => (
+              <Marker 
+              coordinate={{ latitude: marker.latitude, longitude: marker.longitude }}
+              key={index}
+              title={marker.address}
               >
-                <TouchableOpacity 
-                  style={{flex: 1}}
+                <View 
+                  style={{height: 110, width: 55, backgroundColor: 'black', alignSelf: 'center', justifyContent: 'center', alignItems: 'center'}}
                 >
-                  <Image source={{ uri: storedImages[0] }} style={{height: 95, width: 60, alignSelf: 'center', justifyContent: 'center', alignItems: 'center', top: 2.5}} resizeMode={'fit'}/>
-                </TouchableOpacity>
-              </View>
-            </Marker>
+                  <TouchableOpacity 
+                    style={{flex: 1}}
+                  >
+                    <Image source={{ uri: marker.image }} style={{height: 105, width: 50, alignSelf: 'center', justifyContent: 'center', alignItems: 'center', top: 2.5}} resizeMode={'fit'}/>
+                  </TouchableOpacity>
+                </View>
+              </Marker>
+            ))}
           </MapView>
         </View>
         <NavigatorCode/>
@@ -288,47 +336,110 @@ export default function App() {
       
       //Report Details Screen
       return (
-        <View style={{flex: 1}}>
+        <View style={{flex: 1, backgroundColor: 'black'}}>
           <SafeAreaView style={{flex: 1}}>
-            <View style={{flex: 1, backgroundColor: 'green'}}>
+            <View style={{flex: 0.7, backgroundColor: 'black'}}>
               <TouchableOpacity
               onPress={() => retakePhoto()}
-              style={{flex: 1, alignSelf: 'center', backgroundColor: 'red', }}
+              style={{flex: 1, alignSelf: 'center'}}
               >
-                <Text style={{textAlign: 'center', fontWeight: 'bold', fontSize: 40, top: '21%'}}>
+                <Text style={{
+                  color: 'white', 
+                  alignSelf: 'center', 
+                  textAlign: 'center', 
+                  fontSize: 30, 
+                  fontWeight: 'bold', 
+                  textShadowColor: 'white',
+                  textShadowRadius: 5
+                }}>
                   Retake
                 </Text>
               </TouchableOpacity>
             </View>
-            <View style={{flex: 3, backgroundColor: 'blue'}}>
-              <TouchableOpacity
-              style={{flex: 1}}
-              onPress={() => setScreenNumber(2.5)}
-              >
-                <ImageBackground
-                  style={{flex: 1}}
-                  resizeMode={'contain'}
-                  source={{ uri: storedImages[storedImages.length - 1] }}
-                />
-              </TouchableOpacity>
+            <View style={{flex: 4}}>
+              <View style={{alignSelf: 'center', width: '45%', height: '100%', backgroundColor: 'white', borderRadius: 20}}>
+                <View style={{alignSelf: 'center', width: '95%', height: '97%', backgroundColor: 'black', borderRadius: 20, top: '1.5%'}}>
+                  <TouchableOpacity
+                    style={{flex: 1, alignSelf: 'center', right: '45%', top: '5%'}}
+                    onPress={() => setScreenNumber(2.5)}
+                  >
+                    <ImageBackground
+                      style={{height: '95%', width: '95%'}}
+                      resizeMode={'contain'}
+                      source={{ uri: storedImages[storedImages.length - 1] }}
+                    />
+                  </TouchableOpacity>
+                </View>
+              </View>
+                
             </View>
-            <View style={{flex: 0.5, backgroundColor: 'orange'}}>
+            <View style={{flex: 0.7}}>
               <TextInput 
                 style={styles.input}
-                placeholder="useless placeholder"
-                onChangeText={(x) => setDescription(x)}
+                placeholder="Enter Description..."
+                onChangeText={(x) => changeDescription(x)}
                 keyboardType="default"
               />
             </View>
-            <View style={{flex: 2.5, backgroundColor: 'green'}}>
+            <View style={{flex: 2, backgroundColor: 'white', borderRadius: 20}}>
+              <View style={{width: '98.5%', height: '97%', alignSelf: 'center', backgroundColor: 'black', borderRadius: 20, top: '1.5%'}}>
+                <Text style={{
+                  top: '10%',
+                  color: 'white', 
+                  alignSelf: 'center', 
+                  textAlign: 'center', 
+                  fontSize: 15, 
+                  fontWeight: 'bold', 
+                  textShadowColor: 'white',
+                  textShadowRadius: 3
+                }}>
+                  Longitude: {longitude}
+               </Text>
+               <Text  style={{
+                  color: 'white', 
+                  top: '10%',
+                  alignSelf: 'center', 
+                  textAlign: 'center', 
+                  fontSize: 15, 
+                  fontWeight: 'bold', 
+                  textShadowColor: 'white',
+                  textShadowRadius: 3
+                }}>
+                  Latitude: {latitude}
+               </Text>
+               <Text  style={{
+                  color: 'white', 
+                  top: '10%',
+                  alignSelf: 'center', 
+                  textAlign: 'center', 
+                  fontSize: 15, 
+                  fontWeight: 'bold', 
+                  textShadowColor: 'white',
+                  textShadowRadius: 3
+                }}>
+                  Address: {address}
+               </Text>
+               <Text  style={{
+                  color: 'white', 
+                  top: '10%',
+                  alignSelf: 'center', 
+                  textAlign: 'center', 
+                  fontSize: 15, 
+                  fontWeight: 'bold', 
+                  textShadowColor: 'white',
+                  textShadowRadius: 3
+                }}>
+                Description: {description}
+               </Text>
+              </View>
                
             </View>
-            <View style={{flex: 1, backgroundColor: 'yellow'}}>
+            <View style={{flex: 1}}>
               <TouchableOpacity
               onPress={() => addPhoto(photo)}
               style={{justifyContent: 'center', alignItems: 'center', alignSelf: 'center', width: '40%', height: '80%'}}
               >
-                <Text style={{textAlign: 'center', fontSize: 30, fontWeight: 'bold'}}>Submit</Text>
+                <Text style={{textAlign: 'center', fontSize: 30, fontWeight: 'bold', color: 'white', textShadowColor: 'white', textShadowRadius: 5}}>Submit</Text>
               </TouchableOpacity>
             </View>
           </SafeAreaView>
@@ -342,7 +453,15 @@ export default function App() {
     //Image taking (camera) screen
     return (
       <Camera style={styles.container} ref={cameraRef}>
-        <View style={{ flex: 1 }}>
+        <View style={{ flex: 1, alignSelf: 'center' }}>
+          <TouchableOpacity
+          onPress={() => changeScreens(1)}
+          style={{position: 'absolute', height: '7%', width: '35%', top: '7%', backgroundColor: '#3b3832', alignSelf: 'center', borderRadius: 20, borderWidth: 2, borderColor: 'black', opacity: 0.8}}
+          >
+            <Text style={{fontWeight: 'bold', fontSize: 30, color: 'white', textAlign: 'center', top: '16.5%'}}>
+              Cancel
+            </Text>
+          </TouchableOpacity>
           <TouchableOpacity
             style={{ alignSelf: 'center', justifyContent:'center', top: '86.69420%', backgroundColor: 'white', height: 80, width: 80, borderRadius: 160 }}
           >
@@ -374,10 +493,18 @@ export default function App() {
         />
         <TouchableOpacity
         onPress={() => setScreenNumber(2)}
-        style={{position: 'absolute', height: '7%', width: '35%', left: '5%', top: '7%'}}
+        style={{position: 'absolute', height: '7%', width: '35%', top: '7%'}}
         >
-          <Text style={{fontWeight: 'bold', fontSize: 30}}>
-            {'<-- Back'}
+          <Text style={{
+          color: 'white', 
+          alignSelf: 'center', 
+          textAlign: 'center', 
+          fontSize: 30, 
+          fontWeight: 'bold', 
+          textShadowColor: 'white',
+          textShadowRadius: 5
+        }}>
+            {'← Back'}
           </Text>
         </TouchableOpacity>
       </View>
@@ -395,7 +522,8 @@ export default function App() {
           </Text>
           <FlatList
           data={data}
-          renderItem={({ item }) => (
+          keyExtractor={(item, index) => index.toString()}
+          renderItem={({ item, index }) => (
             <View
               style={{
               width: '90%',
@@ -409,23 +537,38 @@ export default function App() {
             >
               <View style={{flex: 1}}>
                 <View style={{flex: 1, flexDirection: 'row'}}>
-                  <View style={{flex: 1.5, backgroundColor: 'green', paddingVertical: 5}}>
+                  <View style={{flex: 1.5, paddingVertical: 5}}>
                     <ImageBackground
-                    style={{flex: 1}}
-                    resizeMode={'contain'}
+                    style={{flex: 1, margin: '3%'}}
+                    imageStyle={{ borderRadius: 20 }}
+                    resizeMode={'fit'}
                     source={{ uri: item.image }}
                     />
                   </View>
-                  <View style={{flex: 2, backgroundColor: 'red'}}>
+                  <View style={{flex: 2, paddingVertical: '3%'}}>
                     <View style={{flex: 1, flexDirection: 'column'}}>
-                      <View style={{flex: 1, backgroundColor: 'orange'}}> 
+                      <View style={{flex: 1}}> 
+                        <Text style={{fontWeight: 'bold', fontSize: 13}}>Date: {item.time}</Text>
+                      </View>
+                      <View style={{flex: 1}}> 
                         <Text style={{fontWeight: 'bold', fontSize: 13}}>Lat: {item.latitude}</Text>
                       </View>
-                      <View style={{flex: 1, backgroundColor: 'blue'}}> 
+                      <View style={{flex: 1}}> 
                         <Text style={{fontWeight: 'bold', fontSize: 13}}>Lon: {item.longitude}</Text>
                       </View>
-                      <View style={{flex: 8, backgroundColor: 'pink'}}> 
-                        
+                      <View style={{flex: 4}}> 
+                      <Text style={{fontWeight: 'bold', fontSize: 13}}>Location: {'\n'}{item.address}</Text>
+                      </View>
+                      <View style={{flex: 8}}> 
+                        <Text style={{fontWeight: 'bold', fontSize: 13}}>Description: {item.description}</Text>
+                      </View>
+                      <View style={{flex: 1}}>
+                        <TouchableOpacity 
+                          style={{width: '10%', left: '85%'}} 
+                          onPress={() => deleteReport(item)}
+                        >
+                          <FontAwesome5 name="trash" size={24} color="red" />
+                        </TouchableOpacity>
                       </View>
                     </View>
                   </View>
@@ -433,9 +576,6 @@ export default function App() {
               </View>
             </View>
           )}
-          keyExtractor={({ id }) => {
-            return id;
-          }}
           />
         </SafeAreaView>
         <NavigatorCode/>
@@ -458,12 +598,12 @@ const styles = StyleSheet.create({
   },
   input: {
     height: 40,
-    marginVertical: '0.8%',
+    marginVertical: '2.5%',
     borderWidth: 1,
     width: '95%',
     alignSelf: 'center',
     padding: 10,
-    backgroundColor: '#949494',
+    backgroundColor: 'white',
     borderRadius: 15
   },
 });
