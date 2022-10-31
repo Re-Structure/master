@@ -56,10 +56,11 @@ export default function App() {
   const [initialLonDelta, setInitialLonDelta] = useState(60.0099);
   const [followUserLocationBoolean, setFollowUserLocationBoolean] = useState(true);
   const [coordinates, setCoordinates] = useState([]);
-  const [navigatorColor1, setNavigatorColor1] = useState('black');
+  const [navigatorColor1, setNavigatorColor1] = useState('white');
   const [navigatorColor2, setNavigatorColor2] = useState('#949494');
   const [navigatorColor3, setNavigatorColor3] = useState('#949494');
   const [longitude, setLongitude] = useState();
+  const [previewScreen, setPreviewScreen] = useState();
   const [latitude, setLatitude] = useState();
   const [itemId, setItemId] = useState(1);
   const [address, setAddress] = useState();
@@ -103,24 +104,29 @@ export default function App() {
     }
   }, [photo])
 
+  function previewFunction(x){
+    setPreviewScreen(x);
+    setScreenNumber(3.5)
+  }
+
   function changeScreens(x){
     if (x == 1){
       setScreenNumber(1);
-      setNavigatorColor1('black')
+      setNavigatorColor1('white')
       setNavigatorColor2('#949494')
       setNavigatorColor3('#949494')
     }
     if (x == 2){
       setScreenNumber(2);
       setNavigatorColor1('#949494')
-      setNavigatorColor2('black')
+      setNavigatorColor2('white')
       setNavigatorColor3('#949494')
     }
     if (x == 3){
       setScreenNumber(3);
       setNavigatorColor1('#949494')
       setNavigatorColor2('#949494')
-      setNavigatorColor3('black')
+      setNavigatorColor3('white')
     }
   }
 
@@ -230,7 +236,7 @@ export default function App() {
   const NavigatorCode = () => {
     return(
       <View style={{flex: 0.12}}>
-        <View style={{flex: 1, flexDirection: 'row', backgroundColor: 'white'}}>
+        <View style={{flex: 1, flexDirection: 'row', backgroundColor: 'black'}}>
           <View style={{flex: 1}}>
             <TouchableOpacity
             onPress={() => changeScreens(1)}
@@ -515,9 +521,19 @@ export default function App() {
   //History Screen
   else if (screenNumber == 3){
     return(
-      <View style={{flex: 1, width: '100%'}}>
+      <View style={{flex: 1, width: '100%', backgroundColor: 'black'}}>
         <SafeAreaView style={{flex: 1, width: '100%'}}>
-          <Text style={{textAlign: 'center', fontWeight: 'bold', fontSize: 30}}>
+          <Text 
+          style={{
+            color: 'white', 
+            alignSelf: 'center', 
+            textAlign: 'center', 
+            fontSize: 30, 
+            fontWeight: 'bold', 
+            textShadowColor: 'white',
+            textShadowRadius: 5
+          }}
+          >
             History
           </Text>
           <FlatList
@@ -531,36 +547,36 @@ export default function App() {
               alignSelf: 'center',
               marginVertical: 20,
               borderRadius: 20,
-              borderColor: 'black',
+              borderColor: 'white',
               borderWidth: 4,
             }}
             >
               <View style={{flex: 1}}>
                 <View style={{flex: 1, flexDirection: 'row'}}>
-                  <View style={{flex: 1.5, paddingVertical: 5}}>
+                  <TouchableOpacity style={{flex: 1.5, paddingVertical: 5}} onPress={() => previewFunction(item.image)}>
                     <ImageBackground
                     style={{flex: 1, margin: '3%'}}
                     imageStyle={{ borderRadius: 20 }}
                     resizeMode={'fit'}
                     source={{ uri: item.image }}
                     />
-                  </View>
+                  </TouchableOpacity>
                   <View style={{flex: 2, paddingVertical: '3%'}}>
                     <View style={{flex: 1, flexDirection: 'column'}}>
                       <View style={{flex: 1}}> 
-                        <Text style={{fontWeight: 'bold', fontSize: 13}}>Date: {item.time}</Text>
+                        <Text style={{fontWeight: 'bold', fontSize: 13, color: 'white'}}>Date: {item.time}</Text>
                       </View>
                       <View style={{flex: 1}}> 
-                        <Text style={{fontWeight: 'bold', fontSize: 13}}>Lat: {item.latitude}</Text>
+                        <Text style={{fontWeight: 'bold', fontSize: 13, color: 'white'}}>Lat: {item.latitude}</Text>
                       </View>
                       <View style={{flex: 1}}> 
-                        <Text style={{fontWeight: 'bold', fontSize: 13}}>Lon: {item.longitude}</Text>
+                        <Text style={{fontWeight: 'bold', fontSize: 13, color: 'white'}}>Lon: {item.longitude}</Text>
                       </View>
                       <View style={{flex: 4}}> 
-                      <Text style={{fontWeight: 'bold', fontSize: 13}}>Location: {'\n'}{item.address}</Text>
+                      <Text style={{fontWeight: 'bold', fontSize: 13, color: 'white'}}>Location: {'\n'}{item.address}</Text>
                       </View>
                       <View style={{flex: 8}}> 
-                        <Text style={{fontWeight: 'bold', fontSize: 13}}>Description: {item.description}</Text>
+                        <Text style={{fontWeight: 'bold', fontSize: 13, color: 'white'}}>Description: {item.description}</Text>
                       </View>
                       <View style={{flex: 1}}>
                         <TouchableOpacity 
@@ -579,6 +595,35 @@ export default function App() {
           />
         </SafeAreaView>
         <NavigatorCode/>
+      </View>
+    )
+  }
+
+
+  else if (screenNumber == 3.5){
+    return(
+      <View style={{flex: 1}}>
+        <ImageBackground
+        style={{flex: 1}}
+        resizeMode={'contain'}
+        source={{ uri: previewScreen }}
+        />
+        <TouchableOpacity
+        onPress={() => setScreenNumber(3)}
+        style={{position: 'absolute', height: '7%', width: '35%', top: '7%'}}
+        >
+          <Text style={{
+          color: 'white', 
+          alignSelf: 'center', 
+          textAlign: 'center', 
+          fontSize: 30, 
+          fontWeight: 'bold', 
+          textShadowColor: 'white',
+          textShadowRadius: 5
+        }}>
+            {'← Back'}
+          </Text>
+        </TouchableOpacity>
       </View>
     )
   }
